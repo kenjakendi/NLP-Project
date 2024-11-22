@@ -1,0 +1,5 @@
+{
+    "data_path": "data/filtered_dataset_with_lyrics.csv",
+    "text_column": "lyrics",
+    "label_column": "emotion_4Q"
+}

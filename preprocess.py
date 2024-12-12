@@ -1,5 +1,6 @@
 import pandas
 import nltk
+import re
 
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
@@ -41,9 +42,10 @@ class Preprocess:
         return df[["text", "label"]]
     
     def convert_to_lower(self):
-        self.data = self.data.map(lambda text: text.lower() if isinstance(text, str) else text)
+        self.data["text"] = self.data["text"].map(lambda text: text.lower() if isinstance(text, str) else text)
     
     def remove_non_words(self):
+        self.data["text"] = self.data["text"].replace(to_replace=r'\[.*?\]', value='', regex=True)
         self.data["text"] = self.data["text"].replace(to_replace=r'[^\w\s]', value='', regex=True)
         self.data["text"] = self.data["text"].replace(to_replace=r'\d', value='', regex=True)
 

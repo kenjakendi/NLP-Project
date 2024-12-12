@@ -28,3 +28,4 @@ if __name__ == "__main__":
     pp = Preprocess(logger=logger ,path=params["data_path"], text_column=params["text_column"], label_column=params["label_column"])
 
     pp.run()
+    print('e')

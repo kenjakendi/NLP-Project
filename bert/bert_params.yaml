@@ -1,5 +1,8 @@
 name: bert-base-uncased
 max_len: 512
-batch_size: 16
-epochs: 4
+batch_size: 8
+epochs: 2
+dropout_rate: 0.1
 learning_rate: 2e-5
+split_size: 0.2
+split_seed: 42

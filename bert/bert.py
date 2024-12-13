@@ -1,8 +1,9 @@
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader, Dataset
-from transformers import BertTokenizer, BertForSequenceClassification
-from transformers import AdamW
+from transformers import BertTokenizer, BertForSequenceClassification, DistilBertForSequenceClassification
+#from transformers import AdamW
+from torch.optim import AdamW
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
 from tqdm import tqdm
@@ -45,7 +46,7 @@ class SongDataset(Dataset):
 # Wczytaj dane z pliku CSV
 data = pd.read_csv("data/songs.csv")
 
-# Kodowanie emocji na liczby
+# Kodowanie emocji na liczby, dodanie kolumny z nimi
 emotion_labels = {label: idx for idx, label in enumerate(data["emotion"].unique())}
 data['label'] = data["emotion"].map(emotion_labels)
 
@@ -60,7 +61,7 @@ max_len = config["max_len"]
 batch_size = config["batch_size"]
 epochs = config["epochs"]
 tokenizer = BertTokenizer.from_pretrained(model_name)
-learning_rate = config["learning_rate"]
+learning_rate = float(config["learning_rate"])
 
 # Dataset i DataLoader
 dataset_train = SongDataset(train_texts.values, train_labels.values, tokenizer, max_len)
@@ -126,5 +127,5 @@ print("Classification Report:")
 print(report)
 
 # 7. Zapis modelu
-model.save_pretrained("output/emotion_classification_model")
-tokenizer.save_pretrained("output/emotion_classification_model")
+model.save_pretrained("bert/output/emotion_classification_model")
+tokenizer.save_pretrained("bert/output/emotion_classification_model")

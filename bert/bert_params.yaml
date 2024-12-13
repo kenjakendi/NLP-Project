@@ -1,4 +1,4 @@
-name: "bert-base-uncased"
+name: bert-base-uncased
 max_len: 512
 batch_size: 16
 epochs: 4

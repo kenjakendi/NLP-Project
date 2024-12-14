@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.svm import SVC
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import classification_report
-from gensim.models import Word2Vec
+from gensim.models import Word2Vec, FastText
 import logging
 import json
 
@@ -45,7 +45,7 @@ def text_to_vector(text, model, embedding_dim):
         return np.zeros(embedding_dim)
 
 
-# **Główna funkcja**
+# **Funkcja główna**
 def main():
     try:
         # **Preprocessing danych**
@@ -63,10 +63,25 @@ def main():
             min_count=1,
             workers=4
         )
+        logger.info("Word2Vec training complete.")
 
-        # Przekształcanie tekstu na embeddingi
-        logger.info("Transforming texts to embeddings...")
-        X = np.array([text_to_vector(text, word2vec_model, EMBEDDING_DIM) for text in data["text"]])
+        # **Tworzenie embeddingów FastText**
+        logger.info("Training FastText embeddings...")
+        fasttext_model = FastText(
+            sentences=data["text"],
+            vector_size=EMBEDDING_DIM,
+            window=5,
+            min_count=1,
+            workers=4
+        )
+        logger.info("FastText training complete.")
+
+        # **Przekształcanie tekstu na embeddingi dla obu modeli**
+        logger.info("Transforming texts to embeddings for Word2Vec...")
+        X_word2vec = np.array([text_to_vector(text, word2vec_model, EMBEDDING_DIM) for text in data["text"]])
+
+        logger.info("Transforming texts to embeddings for FastText...")
+        X_fasttext = np.array([text_to_vector(text, fasttext_model, EMBEDDING_DIM) for text in data["text"]])
 
         # Zamiana etykiet na wartości liczbowe
         label_encoder = LabelEncoder()
@@ -74,39 +89,64 @@ def main():
 
         # **Podział danych na zbiór treningowy i testowy**
         logger.info("Splitting data into train and test sets...")
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        X_w2v_train, X_w2v_test, y_train, y_test = train_test_split(X_word2vec, y, test_size=0.2, random_state=42)
+        X_ft_train, X_ft_test, _, _ = train_test_split(X_fasttext, y, test_size=0.2, random_state=42)
 
-        # **Przeszukiwanie siatki hiperparametrów**
-        logger.info("Starting hyperparameter tuning...")
-        svm_model = SVC(random_state=42)
-        grid_search = GridSearchCV(estimator=svm_model, param_grid=PARAM_GRID, cv=5, scoring='f1_weighted', n_jobs=-1)
-        grid_search.fit(X_train, y_train)
+        # **Przeszukiwanie siatki hiperparametrów dla Word2Vec**
+        logger.info("Starting hyperparameter tuning for Word2Vec embeddings...")
+        svm_model_w2v = SVC(random_state=42)
+        grid_search_w2v = GridSearchCV(estimator=svm_model_w2v, param_grid=PARAM_GRID, cv=5, scoring='f1_weighted', n_jobs=-1)
+        grid_search_w2v.fit(X_w2v_train, y_train)
+
+        # **Przeszukiwanie siatki hiperparametrów dla FastText**
+        logger.info("Starting hyperparameter tuning for FastText embeddings...")
+        svm_model_ft = SVC(random_state=42)
+        grid_search_ft = GridSearchCV(estimator=svm_model_ft, param_grid=PARAM_GRID, cv=5, scoring='f1_weighted', n_jobs=-1)
+        grid_search_ft.fit(X_ft_train, y_train)
 
         # Wyniki najlepszego modelu
-        best_params = grid_search.best_params_
-        logger.info(f"Best parameters found: {best_params}")
+        best_params_w2v = grid_search_w2v.best_params_
+        best_params_ft = grid_search_ft.best_params_
+
+        logger.info(f"Best parameters for Word2Vec: {best_params_w2v}")
+        logger.info(f"Best parameters for FastText: {best_params_ft}")
 
         # **Ocena najlepszego modelu na zbiorze testowym**
-        logger.info("Evaluating the best SVM model...")
-        best_model = grid_search.best_estimator_
-        y_pred = best_model.predict(X_test)
+        logger.info("Evaluating the best Word2Vec SVM model...")
+        best_model_w2v = grid_search_w2v.best_estimator_
+        y_pred_w2v = best_model_w2v.predict(X_w2v_test)
 
-        # **Raport klasyfikacji**
-        report = classification_report(y_test, y_pred, target_names=label_encoder.classes_, output_dict=True)
-        logger.info("Classification report generated.")
+        logger.info("Evaluating the best FastText SVM model...")
+        best_model_ft = grid_search_ft.best_estimator_
+        y_pred_ft = best_model_ft.predict(X_ft_test)
+
+        # **Raporty klasyfikacji**
+        report_w2v = classification_report(y_test, y_pred_w2v, target_names=label_encoder.classes_, output_dict=True)
+        report_ft = classification_report(y_test, y_pred_ft, target_names=label_encoder.classes_, output_dict=True)
+
+        logger.info("Classification reports generated.")
 
         # **Zapis wyników do pliku**
         results = {
-            "best_params": best_params,
-            "classification_report": report
+            "Word2Vec": {
+                "best_params": best_params_w2v,
+                "classification_report": report_w2v
+            },
+            "FastText": {
+                "best_params": best_params_ft,
+                "classification_report": report_ft
+            }
         }
         with open(OUTPUT_PATH, 'w') as f:
             json.dump(results, f, indent=4)
         logger.info(f"Results saved to {OUTPUT_PATH}")
 
-        # Wyświetlenie raportu
-        print("Classification Report:")
-        print(classification_report(y_test, y_pred, target_names=label_encoder.classes_))
+        # Wyświetlenie raportów
+        print("Classification Report for Word2Vec:")
+        print(classification_report(y_test, y_pred_w2v, target_names=label_encoder.classes_))
+
+        print("\nClassification Report for FastText:")
+        print(classification_report(y_test, y_pred_ft, target_names=label_encoder.classes_))
 
     except Exception as e:
         logger.error(f"An error occurred: {e}")

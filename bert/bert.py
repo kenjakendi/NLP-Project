@@ -7,11 +7,12 @@ from sklearn.model_selection import train_test_split
 import yaml
 
 if __name__ == "__main__":
+
     # Load data
     with open("bert/bert_params.yaml", "r") as file:
         config = yaml.safe_load(file)
     # Prepare Data
-    data = pd.read_csv("data/songs.csv")
+    data = pd.read_csv("data/filtered_songs.csv")
     emotion_labels = {label: idx for idx, label in enumerate(data["emotion"].unique())}
     data['label'] = data["emotion"].map(emotion_labels)
     # Split data
@@ -43,4 +44,10 @@ if __name__ == "__main__":
     print("Classification Report:")
     print(report)
     # Save to file
-    classifier.save_model(f"bert/output/emotion_classification_model_{classifier.max_len}_{classifier.batch_size}_{classifier.epochs}_{classifier.dropout_rate}_{classifier.learning_rate}")
+    #classifier.save_model(f"bert/models/emotion_classification_model_{classifier.max_len}_{classifier.batch_size}_{classifier.epochs}_{classifier.dropout_rate}_{classifier.learning_rate}")
+
+
+
+
+
+

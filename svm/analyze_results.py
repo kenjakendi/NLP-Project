@@ -5,6 +5,7 @@ import pandas as pd
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DEFAULT_RESULTS_PATH = os.path.join(BASE_DIR, "results.json")
 OUTPUT_PATH = os.path.join(BASE_DIR, "best_parameters.json")
+TXT_OUTPUT_PATH = os.path.join(BASE_DIR, "best_parameters_report.txt")  # Ścieżka do pliku tekstowego
 
 
 def analyze_results(results_path, embedding_param_ranges=None, svm_param_ranges=None):
@@ -119,20 +120,20 @@ def display_classification_report(report, svm_params, embedding_params):
     report_df = report_df[['precision', 'recall', 'f1-score', 'support']]
 
     # Wyświetlenie parametrów embeddingu w jednej linii
-    embedding_str = (f"Vector size: {embedding_params.get('vector_size', 'N/A')}, "
+    embedding_str = (f"Model: {embedding_params.get('model_type', 'N/A')}, "  # Dodanie nazwy modelu
+                     f"Vector size: {embedding_params.get('vector_size', 'N/A')}, "
                      f"Window size: {embedding_params.get('window', 'N/A')}, "
                      f"Min count: {embedding_params.get('min_count', 'N/A')}")
     
-    print(f"\nEmbedding Parameters: ")
-    print(embedding_str)
-    # Wyświetlenie parametrów SVM
-    print("\nSVM Parameters:")
-    print(f"C: {svm_params['C']}, Kernel: {svm_params['kernel']}, Gamma: {svm_params['gamma']}")
+    result_str = f"\nEmbedding Parameters: \n{embedding_str}\n\nSVM Parameters:\nC: {svm_params['C']}, Kernel: {svm_params['kernel']}, Gamma: {svm_params['gamma']}\nClassification Report:\n{report_df.to_string(index=True)}"
 
-    # Wyświetlenie miar
-    print("Classification Report:")
-    print(report_df.to_string(index=True))
-
+    # Wyświetlenie na konsoli
+    print(result_str)
+   
+    # Zapis do pliku tekstowego
+    with open(TXT_OUTPUT_PATH, 'a') as txt_file:
+        txt_file.write(result_str + "\n\n" + "="*50 + "\n")
+    
 
 if __name__ == "__main__":
     # Domyślne wywołanie analizy z domyślną ścieżką

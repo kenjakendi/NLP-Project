@@ -2,12 +2,51 @@ import os
 import json
 import pandas as pd
 
-# Ścieżka do pliku z wynikami
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-RESULTS_PATH = os.path.join(BASE_DIR, 'results.json')
+DEFAULT_RESULTS_PATH = os.path.join(BASE_DIR, "results.json")
+OUTPUT_PATH = os.path.join(BASE_DIR, "best_parameters.json")
 
-def analyze_results(results_path):
+
+def analyze_results(results_path, embedding_param_ranges=None, svm_param_ranges=None):
     try:
+        # Jeśli zakresy parametrów nie zostały podane, spróbuj je wywnioskować z pliku wyników
+        if embedding_param_ranges is None or svm_param_ranges is None:
+            with open(results_path, 'r') as f:
+                results = json.load(f)
+
+            # Inicjalizacja zbiorów dla zakresów parametrów
+            embedding_param_ranges = embedding_param_ranges or {}
+            svm_param_ranges = svm_param_ranges or {}
+
+            for result in results:
+                embedding_params = result['embedding_params']
+                svm_params = result['svm_params']
+
+                # Aktualizacja zakresów embeddingów
+                for param, value in embedding_params.items():
+                    embedding_param_ranges.setdefault(param, set()).add(value)
+
+                # Aktualizacja zakresów SVM
+                for param, value in svm_params.items():
+                    svm_param_ranges.setdefault(param, set()).add(value)
+
+            # Konwersja zbiorów na listy (dla czytelniejszego wyświetlania)
+            embedding_param_ranges = {param: sorted(values) for param, values in embedding_param_ranges.items()}
+            svm_param_ranges = {param: sorted(values) for param, values in svm_param_ranges.items()}
+
+        # Wyświetlenie zakresu badanych parametrów
+        if embedding_param_ranges and svm_param_ranges:
+            print("\n" + "="*50)
+            print("Experiment Parameter Ranges:")
+            print("\nEmbedding Parameters:")
+            for param, values in embedding_param_ranges.items():
+                print(f"  {param}: {values}")
+            
+            print("\nSVM Parameters:")
+            for param, values in svm_param_ranges.items():
+                print(f"  {param}: {values}")
+            print("="*50 + "\n")
+        
         # Wczytaj dane z pliku JSON
         with open(results_path, 'r') as f:
             results = json.load(f)
@@ -53,6 +92,18 @@ def analyze_results(results_path):
         print("Best FastText classifier:")
         display_classification_report(best_fasttext['classification_report'], best_fasttext['svm_params'], best_fasttext['embedding_params'])
     
+         # Zapisz najlepsze parametry oraz zakresy do pliku JSON
+        best_params = {
+            "embedding_param_ranges": embedding_param_ranges,
+            "svm_param_ranges": svm_param_ranges,
+            "best_word2vec": best_word2vec,
+            "best_fasttext": best_fasttext
+        }
+
+        with open(OUTPUT_PATH, 'w') as output_file:
+            json.dump(best_params, output_file, indent=4)
+        print(f"\nBest parameters and ranges saved to: {OUTPUT_PATH}")
+
     except Exception as e:
         print(f"An error occurred: {e}")
 
@@ -82,5 +133,8 @@ def display_classification_report(report, svm_params, embedding_params):
     print("Classification Report:")
     print(report_df.to_string(index=True))
 
+
 if __name__ == "__main__":
-    analyze_results(RESULTS_PATH)
+    # Domyślne wywołanie analizy z domyślną ścieżką
+    print("Running analysis with default results path...\n")
+    analyze_results(DEFAULT_RESULTS_PATH)

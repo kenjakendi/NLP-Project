@@ -9,6 +9,8 @@ from gensim.models import Word2Vec, FastText
 import logging
 import json
 from itertools import product
+from analyze_results import analyze_results  # Import funkcji analizy
+
 
 # Dodanie katalogu głównego do ścieżki Pythona
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -27,16 +29,16 @@ OUTPUT_PATH = os.path.join(BASE_DIR, 'SVM', 'results.json')
 TEXT_COLUMN = "lyrics"
 LABEL_COLUMN = "emotion"
 
-# Parametry embeddingów do przetestowania
+# Rozszerzone parametry embeddingów do przetestowania
 EMBEDDING_PARAMS = {
     'model_type': ['Word2Vec', 'FastText'],  # Typ modelu embeddingu
-    'vector_size': [50, 100, 200],  # Rozmiar embeddingów
-    'window': [3, 5],  # Rozmiar okna
-    'min_count': [1, 5]  # Minimalna liczba wystąpień słowa
+    'vector_size': [50, 100, 200, 300],  # Rozmiar embeddingów (dodano 300)
+    'window': [3, 5, 7],  # Rozmiar okna (dodano 7)
+    'min_count': [1, 3, 5]  # Minimalna liczba wystąpień słowa (dodano 3)
 }
 
 # Siatka hiperparametrów SVM
-PARAM_GRID = {
+SVM_PARAMS = {
     'C': [0.1, 1, 10, 100],  # Regularizacja
     'kernel': ['linear', 'rbf'],  # Rodzaje kerneli
     'gamma': ['scale', 'auto'],  # Parametr gamma
@@ -100,7 +102,7 @@ def main():
             # Przeszukiwanie siatki hiperparametrów dla SVM
             logger.info(f"Starting GridSearchCV for SVM with {embedding_params['model_type']} embeddings...")
             svm_model = SVC(random_state=42)
-            grid_search = GridSearchCV(estimator=svm_model, param_grid=PARAM_GRID, cv=5, scoring='f1_weighted', n_jobs=-1)
+            grid_search = GridSearchCV(estimator=svm_model, SVM_PARAMS=SVM_PARAMS, cv=5, scoring='f1_weighted', n_jobs=-1)
             grid_search.fit(X_train, y_train)
 
             # Ocena najlepszego modelu
@@ -117,11 +119,14 @@ def main():
 
             logger.info(f"Results for {embedding_params['model_type']} with params {embedding_params} saved.")
 
-        # Zapis wyników do pliku
+        # Po zakończeniu eksperymentów: zapisz wyniki i wywołaj analizę
+        logger.info("Saving results to file...")
         with open(OUTPUT_PATH, 'w') as f:
             json.dump(results, f, indent=4)
-
         logger.info(f"All results saved to {OUTPUT_PATH}")
+
+        logger.info("Running analysis on results...")
+        analyze_results(OUTPUT_PATH, EMBEDDING_PARAMS, SVM_PARAMS)
 
     except Exception as e:
         logger.error(f"An error occurred: {e}")

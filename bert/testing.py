@@ -1,5 +1,5 @@
 import pandas as pd
-
+"""
 # Wczytaj dane z pliku CSV
 data = pd.read_csv("data/songs.csv")
 # Sprawdź, czy wymagane kolumny istnieją
@@ -27,7 +27,7 @@ for text in data["lyrics"]:
 average_length = sum(token_lengths) / len(token_lengths)
 print(f"Średnia długość ztokenizowanych tekstów: {average_length:.2f}")
 
-"""
+
 przed zmianami
 Średnia długość ztokenizowanych tekstów: 330.64
 Maksymalna długość ztokenizowanych tekstów: 1844.00
@@ -37,7 +37,7 @@ angry      483
 sad        461
 relaxed    449
 
-po zmianach (ucięcie ztokenizowanych >512)
+po zmianach (ucięcie ztokenizowanych >512, niecałe 300)
 Średnia długość ztokenizowanych tekstów: 257.24
 Maksymalna długość ztokenizowanych tekstów: 512.00
 Dłuższe od 512: 0.00
@@ -46,3 +46,41 @@ relaxed    421
 happy      406
 angry      396
 """
+import pandas as pd
+from transformers import BertTokenizer
+
+def filter_long_texts(input_csv, output_csv, text_column, label_column, max_tokens=512):
+    # Wczytaj dane z pliku CSV
+    data = pd.read_csv(input_csv)
+
+    # Inicjalizacja tokenizatora BERT
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+
+    # Filtruj teksty, które mają mniej niż `max_tokens` tokenów
+    filtered_data = []
+    for _, row in data.iterrows():
+        text = row[text_column]
+        label = row[label_column]
+
+        # Tokenizowanie tekstu
+        tokenized = tokenizer(text, truncation=False, return_tensors='pt')
+        num_tokens = tokenized['input_ids'].shape[1]
+
+        # Zachowaj tylko te, które mają <= `max_tokens`
+        if num_tokens <= max_tokens:
+            filtered_data.append({'text': text, 'label': label})
+
+    # Tworzenie DataFrame z przefiltrowanymi danymi
+    filtered_df = pd.DataFrame(filtered_data)
+
+    # Zapisz do nowego pliku CSV
+    filtered_df.to_csv(output_csv, index=False)
+    print(f"Przefiltrowane dane zapisano w pliku: {output_csv}")
+
+# Wywołanie funkcji
+filter_long_texts(
+    input_csv='data/filtered_dataset_with_lyrics.csv',  # Plik wejściowy
+    output_csv='data/filtered_dataset_with_lyrics_512.csv',  # Plik wyjściowy
+    text_column='lyrics',  # Kolumna z tekstami
+    label_column='emotion_2Q'  # Kolumna z labelami
+)

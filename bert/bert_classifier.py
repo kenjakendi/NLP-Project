@@ -1,6 +1,7 @@
 import yaml
 import time
 import torch
+import os
 from tqdm import tqdm
 from torch.optim import AdamW
 from transformers import BertTokenizer, BertForSequenceClassification
@@ -36,6 +37,11 @@ class BertClassifier:
         # Initialize optimizer
         self.optimizer = AdamW(self.model.parameters(), lr=self.learning_rate)
 
+    def save_model(self, output_path):
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        self.model.save_pretrained(output_path)
+        BertTokenizer.from_pretrained(self.model_name).save_pretrained(output_path)
+
     def train_epoch(self):
         self.model.train()
         total_loss = 0
@@ -62,8 +68,9 @@ class BertClassifier:
         # Calculate accuracy and F1 score
         acc = accuracy_score(all_labels, all_preds)
         f1 = f1_score(all_labels, all_preds, average='weighted')
-
-        return total_loss / len(self.train_loader), acc, f1
+        # Generate classification report
+        report = classification_report(all_labels, all_preds, target_names=self.emotion_labels.keys())
+        return total_loss / len(self.train_loader), acc, f1, report
 
     def evaluate(self):
         self.model.eval()
@@ -87,16 +94,34 @@ class BertClassifier:
     def train(self):
         for epoch in range(self.epochs):
             print(f"Epoch {epoch + 1}/{self.epochs}")
+            """
+            # =======================================================================
+            # Zamrażanie niższych warstw BERT-a przez pierwsze dwie epoki
+            if epoch < 2:
+                print("Freezing BERT layers.")
+                for name, param in self.model.named_parameters():
+                    if "classifier" not in name:  # "classifier" to nazwa warstwy liniowej w BERT
+                        param.requires_grad = False
+            else:
+                print("Unfreezing BERT layers.")
+                for name, param in self.model.named_parameters():
+                    param.requires_grad = True
+            # ===========================================================================
+            """
             start_time = time.time()
 
-            train_loss, acc, f1 = self.train_epoch()
+            train_loss, acc, f1, train_report = self.train_epoch()
+
             epoch_duration = time.time() - start_time
-
             print(f"Training loss: {train_loss:.4f}")
-            print(f"Accuracy: {acc:.4f}")
-            print(f"F1 score: {f1:.4f}")
-            print(f"Epoch time: {epoch_duration:.2f} seconds")
+            print(f"Training accuracy: {acc:.4f}")
+            print(f"Training F1 score: {f1:.4f}")
+            print(f"Training Classification Report:\n{train_report}")
+            print(f"Training Epoch time: {epoch_duration:.2f} seconds")
+            acc, report = self.evaluate()
+            print(f"Test accuracy: {acc:.4f}")
+            print("Test classification Report:")
+            print(f"Test Classification Report:\n{report}")
+            self.save_model(f"bert/models/emotion_classification_model_Epoch{epoch + 1}_len{self.max_len}_bs{self.batch_size}_ep{self.epochs}_dr{self.dropout_rate}_lr{str(self.learning_rate).replace('.', 'p')}")
+            print("=====next epoch=====")
 
-    def save_model(self, output_path):
-        self.model.save_pretrained(output_path)
-        BertTokenizer.from_pretrained(self.model_name).save_pretrained(output_path)

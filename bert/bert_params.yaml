@@ -1,8 +1,10 @@
 name: bert-base-uncased
-max_len: 512
-batch_size: 16
+max_len: 256
+batch_size: 8
 epochs: 5
 dropout_rate: 0.1
 learning_rate: 2e-5
 split_size: 0.2
-split_seed: 42
+split_seed: 3
+label_column: emotion
+text_column: lyrics

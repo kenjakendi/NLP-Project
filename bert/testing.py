@@ -84,9 +84,9 @@ filter_long_texts(
     text_column='lyrics',  # Kolumna z tekstami
     label_column='emotion_2Q'  # Kolumna z labelami
 )
-"""
+
 def convert_txt_to_csv(input_txt, output_csv):
-    """Konwertuje dane z pliku tekstowego '<label> <tekst>' do pliku CSV."""
+
     labels = []
     texts = []
 
@@ -108,4 +108,36 @@ def convert_txt_to_csv(input_txt, output_csv):
 convert_txt_to_csv(
     input_txt="data/emotion.txt",  # Plik wejściowy (txt)
     output_csv="data/emotion.csv"  # Plik wyjściowy (csv)
+)
+
+"""
+# Funkcja do zamiany etykiet numerycznych na tekstowe
+def get_label(num):
+    if num == 1:
+        return "happy"
+    elif num == 2:
+        return "angry"
+    elif num == 3:
+        return "sad"
+    elif num == 4:
+        return "relaxed"
+    else:
+        return "unknown"  # Dla wartości spoza zakresu
+
+# Zamiana etykiet numerycznych na tekstowe
+def convert_labels_to_text(input_csv, output_csv):
+    # Wczytaj dane
+    data = pd.read_csv(input_csv)
+
+    # Zamień numeryczne etykiety na tekstowe
+    data['label'] = data['label'].apply(get_label)
+
+    # Zapisz zmodyfikowane dane do nowego pliku CSV
+    data.to_csv(output_csv, index=False)
+    print(f"Plik z zamienionymi etykietami został zapisany jako: {output_csv}")
+
+# Wywołanie funkcji
+convert_labels_to_text(
+    input_csv="data/emotion.csv",    # Plik wejściowy
+    output_csv="data/emotion.csv"  # Plik wyjściowy
 )

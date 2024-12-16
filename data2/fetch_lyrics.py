@@ -49,7 +49,7 @@ if __name__ == "__main__":
         processed_songs = set(zip(existing_data['Artist'], existing_data['Title']))
     else:
         # Jeśli plik wynikowy nie istnieje, utwórz nagłówki
-        pd.DataFrame(columns=['Index', 'Artist', 'Title', 'Tekst']).to_csv(output_csv, index=False, encoding='utf-8')
+        pd.DataFrame(columns=['Index', 'Artist', 'Title','Mood4Q', 'Mood2Q', 'Tekst']).to_csv(output_csv, index=False, encoding='utf-8')
         processed_songs = set()
 
     # Pobieranie tekstów piosenek
@@ -71,6 +71,8 @@ if __name__ == "__main__":
             'Index': row['Index'],
             'Artist': row['Artist'],
             'Title': row['Title'],
+            'Mood4Q': row['Mood4Q'],
+            'Mood2Q': row['Mood2Q'],
             'Tekst': lyrics
         }]).to_csv(output_csv, mode='a', header=False, index=False, encoding='utf-8')
 

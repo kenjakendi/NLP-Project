@@ -4,10 +4,10 @@ import pandas as pd
 excel_file = "ml_balanced.xlsx"  # Zamień na nazwę swojego pliku
 
 # Odczytanie danych od wiersza 17 (pomijamy nagłówki do wiersza 16)
-df = pd.read_excel(excel_file, header=None, skiprows=16, usecols="A:C", engine="openpyxl")
+df = pd.read_excel(excel_file, header=None, skiprows=16, usecols="A:E", engine="openpyxl")
 
 # Przypisz kolumnom odpowiednie nazwy
-df.columns = ["Index", "Artist", "Title"]
+df.columns = ["Index", "Artist", "Title", "Mood4Q", "Mood2Q"]
 
 # Eksportuj dane do pliku CSV
 output_csv = "Moodylyrics4Q.csv"  # Nazwa wyjściowego pliku CSV

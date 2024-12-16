@@ -8,7 +8,7 @@ input_csv = os.path.join('data2', 'Moodylyrics4Q.csv')
 data = pd.read_csv(input_csv)
 
 # Inicjalizacja API Lyrics Genius
-api_key = "rl9-DUbz_HeRumpCq1mY7LvO92oSLDPYwuGTNylMXJ5kox1X_Rft3mkYfiEFPf78hhPat6r-3kOgF_HNEwHcQw"  # Zamień na swój klucz API
+api_key = "adamW"  # Zamień na swój klucz API
 genius = lyricsgenius.Genius(api_key)
 # Dostosowanie nagłówków użytkownika
 # genius.headers.update({"User-Agent": "Mozilla/5.0 (compatible; LyricsFetcher/1.0)"})

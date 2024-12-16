@@ -14,10 +14,12 @@ if __name__ == "__main__":
         config = yaml.safe_load(file)
     label_column = config["label_column"]
     text_column = config["text_column"]
+
     # Prepare Data
-    data = pd.read_csv("data/songs.csv")
+    data = pd.read_csv("data/emotion.csv")
     emotion_labels = {label: idx for idx, label in enumerate(data[label_column].unique())}
     data['label'] = data[label_column].map(emotion_labels)
+
     # Split data
     train_texts, test_texts, train_labels, test_labels = train_test_split(
         data[text_column], data['label'], test_size=config["split_size"], random_state=config["split_seed"]

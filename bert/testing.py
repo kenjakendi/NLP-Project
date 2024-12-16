@@ -45,7 +45,7 @@ sad        444
 relaxed    421
 happy      406
 angry      396
-"""
+
 import pandas as pd
 from transformers import BertTokenizer
 
@@ -83,4 +83,29 @@ filter_long_texts(
     output_csv='data/filtered_dataset_with_lyrics_512.csv',  # Plik wyjściowy
     text_column='lyrics',  # Kolumna z tekstami
     label_column='emotion_2Q'  # Kolumna z labelami
+)
+"""
+def convert_txt_to_csv(input_txt, output_csv):
+    """Konwertuje dane z pliku tekstowego '<label> <tekst>' do pliku CSV."""
+    labels = []
+    texts = []
+
+    with open(input_txt, "r", encoding="utf-8") as file:
+        for line in file:
+            # Rozdziel etykietę od tekstu (pierwszy element to etykieta, reszta to tekst)
+            label, text = line.strip().split(' ', 1)
+            labels.append(int(label))  # Konwertuj etykietę na liczbę całkowitą
+            texts.append(text)
+
+    # Tworzenie DataFrame
+    data = pd.DataFrame({"label": labels, "text": texts})
+
+    # Zapis do pliku CSV
+    data.to_csv(output_csv, index=False)
+    print(f"Dane zostały zapisane w pliku: {output_csv}")
+
+# Wywołanie funkcji
+convert_txt_to_csv(
+    input_txt="data/emotion.txt",  # Plik wejściowy (txt)
+    output_csv="data/emotion.csv"  # Plik wyjściowy (csv)
 )

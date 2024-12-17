@@ -2,8 +2,11 @@
     "run_mode": "train and test",
     "test_size": 0.2,
     "embedding_type": "word2vec",
-    "hidden_size": 12,
-    "epochs": 100,
-    "model_file_path": "fnn_model.pth",
+    "vector_size":200,
+    "window":10,
+    "min_count":3,
+    "hidden_size": 50,
+    "epochs": 1000,
+    "model_file_path": "FFNN/fnn_model_word2vec.pth",
     "learning_rate":0.001
 }

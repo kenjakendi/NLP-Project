@@ -1,5 +1,6 @@
-import pandas as pd
 import numpy as np
+import os
+import sys
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -9,8 +10,12 @@ import json
 from gensim.models import Word2Vec, FastText
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
 
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(BASE_DIR)
 from preprocess import Preprocess
+
 
 
 class FFNN(nn.Module):
@@ -28,7 +33,7 @@ class FFNN(nn.Module):
         out = self.fc2(out)
         out = self.relu2(out)
         out = self.fc3(out)
-        out - torch.softmax(out, dim=1)
+        out = torch.softmax(out, dim=1)
         return out
 
 
@@ -71,6 +76,9 @@ if __name__ == "__main__":
     model_file_path = params["model_file_path"]
     embedding_type = params["embedding_type"]
     learning_rate = params["learning_rate"]
+    vector_size = params["vector_size"]
+    window = params["window"]
+    min_count = params["min_count"]
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info(f"Using device: {device}")
@@ -80,9 +88,9 @@ if __name__ == "__main__":
 
     logger.info(f"Converting tokenized lyrics to embeddings with {embedding_type}")
     if embedding_type == "word2vec":
-        embedding_model = Word2Vec(sentences=tokenized_lyrics, vector_size=100, window=5, min_count=1, workers=4)
+        embedding_model = Word2Vec(sentences=tokenized_lyrics, vector_size=vector_size, window=window, min_count=min_count, workers=4)
     else:
-        embedding_model = FastText(sentences=tokenized_lyrics, vector_size=100, window=5, min_count=1, workers=4)
+        embedding_model = FastText(sentences=tokenized_lyrics, vector_size=vector_size, window=window, min_count=min_count, workers=4)
 
     lyrics_embeddings = create_embedding_matrix(tokenized_lyrics, embedding_model)
 
@@ -118,8 +126,6 @@ if __name__ == "__main__":
 
         logger.info("Training has been STARTED...")
         for epoch in range(epochs):
-            logger.info(f"Epoch: {epoch}")
-
             model.train()
             optimizer.zero_grad()
             outputs = model(lyrics_train)
@@ -127,7 +133,9 @@ if __name__ == "__main__":
             loss.backward()
             optimizer.step()
 
-            logger.info(f"Epoch [{epoch + 1}/{epochs}], Loss: {loss.item():.4f}")
+            if (epoch+1) % 100 == 0:
+
+                logger.info(f"Epoch [{epoch + 1}/{epochs}], Loss: {loss.item():.4f}")
 
         logger.info("Training has been FINISHED.")
 
@@ -150,3 +158,7 @@ if __name__ == "__main__":
             accuracy = correct / len(emotion_test) * 100
 
         logger.info(f"Test Accuracy: {accuracy:.2f}%")
+
+        print("Classification report")
+        print(classification_report(emotion_test.cpu(), predicted.cpu(), target_names=label_encoder.classes_))
+

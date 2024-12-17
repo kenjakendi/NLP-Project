@@ -1,5 +1,5 @@
 {
-    "data_path": "data/filtered_songs.csv",
-    "text_column": "lyrics",
-    "label_column": "emotion"
+    "data_path": "data/emotion.csv",
+    "text_column": "text",
+    "label_column": "label"
 }

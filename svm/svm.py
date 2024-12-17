@@ -22,26 +22,27 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("SVM_Classifier")
 
 # Ścieżki plików
-DATA_PATH = os.path.join(BASE_DIR, 'data', 'songs.csv')
+DATA_PATH = os.path.join(BASE_DIR, 'data', 'emotion.csv')
 OUTPUT_PATH = os.path.join(BASE_DIR, 'SVM', 'results.json')
 
 # Parametry programu
-TEXT_COLUMN = "lyrics"
-LABEL_COLUMN = "emotion"
+TEXT_COLUMN = "text"
+LABEL_COLUMN = "label"
 
 # Rozszerzone parametry embeddingów do przetestowania
-EMBEDDING_PARAMS = {
+EMBEDDING_PARAMS_RANGES = {
     'model_type': ['Word2Vec', 'FastText'],  # Typ modelu embeddingu
-    'vector_size': [50, 100, 200, 300],  # Rozmiar embeddingów (dodano 300)
-    'window': [3, 5, 7],  # Rozmiar okna (dodano 7)
-    'min_count': [1, 3, 5]  # Minimalna liczba wystąpień słowa (dodano 3)
+    'vector_size': [50, 100, 200, 300],  # Rozmiar embeddingów
+    'window': [2, 3, 5, 7, 10],  # Rozmiar okna
+    'min_count': [1, 3, 5, 10]  # Minimalna liczba wystąpień słowa
 }
 
 # Siatka hiperparametrów SVM
-SVM_PARAMS = {
-    'C': [0.1, 1, 10, 100],  # Regularizacja
-    'kernel': ['linear', 'rbf'],  # Rodzaje kerneli
-    'gamma': ['scale', 'auto'],  # Parametr gamma
+SVM_PARAMS_RANGES = {
+    'C': [0.1, 1, 10, 100],
+    'kernel': ['linear', 'rbf', 'poly', 'sigmoid'],
+    'gamma': ['scale', 'auto', 0.01, 0.1, 1],
+    'degree': [2, 3, 4]  # Tylko dla kernela poly
 }
 
 # Funkcja do tworzenia embeddingów
@@ -70,8 +71,8 @@ def main():
         results = []
 
         # Pętla po kombinacjach parametrów embeddingów
-        for params in product(*EMBEDDING_PARAMS.values()):
-            embedding_params = dict(zip(EMBEDDING_PARAMS.keys(), params))
+        for params in product(*EMBEDDING_PARAMS_RANGES.values()):
+            embedding_params = dict(zip(EMBEDDING_PARAMS_RANGES.keys(), params))
             logger.info(f"Training {embedding_params['model_type']} model with params: {embedding_params}")
 
             # Trening odpowiedniego modelu
@@ -102,8 +103,26 @@ def main():
             # Przeszukiwanie siatki hiperparametrów dla SVM
             logger.info(f"Starting GridSearchCV for SVM with {embedding_params['model_type']} embeddings...")
             svm_model = SVC(random_state=42)
-            grid_search = GridSearchCV(estimator=svm_model, SVM_PARAMS=SVM_PARAMS, cv=5, scoring='f1_weighted', n_jobs=-1)
+
+            # Logowanie informacji o parametrach siatki hiperparametrów
+            logger.info(f"GridSearchCV SVM params: {SVM_PARAMS_RANGES}")
+
+            grid_search = GridSearchCV(estimator=svm_model, param_grid=SVM_PARAMS_RANGES, cv=5, scoring='f1_weighted', n_jobs=-1)
+
+            # Logowanie liczby kombinacji hiperparametrów przed rozpoczęciem treningu
+            total_combinations = np.prod([len(v) for v in SVM_PARAMS_RANGES.values()])
+            logger.info(f"Total hyperparameter combinations to test: {total_combinations}")
+
             grid_search.fit(X_train, y_train)
+
+            # Logowanie najlepszego zestawu parametrów
+            logger.info(f"Best SVM params for current embedding ({embedding_params['model_type']}): {grid_search.best_params_}")
+
+            # # Przeszukiwanie siatki hiperparametrów dla SVM
+            # logger.info(f"Starting GridSearchCV for SVM with {embedding_params['model_type']} embeddings...")
+            # svm_model = SVC(random_state=42)
+            # grid_search = GridSearchCV(estimator=svm_model, param_grid=SVM_PARAMS_RANGES, cv=5, scoring='f1_weighted', n_jobs=-1)
+            # grid_search.fit(X_train, y_train)
 
             # Ocena najlepszego modelu
             best_model = grid_search.best_estimator_
@@ -126,7 +145,7 @@ def main():
         logger.info(f"All results saved to {OUTPUT_PATH}")
 
         logger.info("Running analysis on results...")
-        analyze_results(OUTPUT_PATH, EMBEDDING_PARAMS, SVM_PARAMS)
+        analyze_results(OUTPUT_PATH, EMBEDDING_PARAMS_RANGES, SVM_PARAMS_RANGES)
 
     except Exception as e:
         logger.error(f"An error occurred: {e}")

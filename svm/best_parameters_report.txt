@@ -1,34 +1,34 @@
 
 Embedding Parameters: 
-Model: Word2Vec, Vector size: 100, Window size: 7, Min count: 1
-
-SVM Parameters:
-C: 10, Kernel: linear, Gamma: scale
-Classification Report:
-              precision    recall  f1-score     support
-angry          0.592233  0.628866  0.610000   97.000000
-happy          0.606838  0.676190  0.639640  105.000000
-relaxed        0.640625  0.422680  0.509317   97.000000
-sad            0.564815  0.655914  0.606965   93.000000
-accuracy       0.596939  0.596939  0.596939    0.596939
-macro avg      0.601128  0.595913  0.591480  392.000000
-weighted avg   0.601615  0.596939  0.592305  392.000000
-
-==================================================
-
-Embedding Parameters: 
-Model: FastText, Vector size: 200, Window size: 7, Min count: 3
+Model: Word2Vec, Vector size: 200, Window size: 10, Min count: 1
 
 SVM Parameters:
 C: 100, Kernel: linear, Gamma: scale
 Classification Report:
               precision    recall  f1-score     support
-angry          0.646465  0.659794  0.653061   97.000000
-happy          0.630252  0.714286  0.669643  105.000000
-relaxed        0.571429  0.371134  0.450000   97.000000
-sad            0.504505  0.602151  0.549020   93.000000
-accuracy       0.589286  0.589286  0.589286    0.589286
-macro avg      0.588162  0.586841  0.580431  392.000000
-weighted avg   0.589875  0.589286  0.582572  392.000000
+angry          0.872093  0.882353  0.877193   85.000000
+happy          0.950000  0.913462  0.931373  104.000000
+relaxed        0.911765  0.930000  0.920792  100.000000
+sad            0.922330  0.931373  0.926829  102.000000
+accuracy       0.915601  0.915601  0.915601    0.915601
+macro avg      0.914047  0.914297  0.914047  391.000000
+weighted avg   0.916067  0.915601  0.915703  391.000000
+
+==================================================
+
+Embedding Parameters: 
+Model: FastText, Vector size: 200, Window size: 7, Min count: 5
+
+SVM Parameters:
+C: 100, Kernel: linear, Gamma: scale
+Classification Report:
+              precision    recall  f1-score     support
+angry          0.831461  0.870588  0.850575   85.000000
+happy          0.958333  0.884615  0.920000  104.000000
+relaxed        0.890000  0.890000  0.890000  100.000000
+sad            0.877358  0.911765  0.894231  102.000000
+accuracy       0.890026  0.890026  0.890026    0.890026
+macro avg      0.889288  0.889242  0.888701  391.000000
+weighted avg   0.892152  0.890026  0.890513  391.000000
 
 ==================================================

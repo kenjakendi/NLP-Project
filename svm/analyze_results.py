@@ -9,7 +9,7 @@ TXT_OUTPUT_PATH = os.path.join(BASE_DIR, "best_parameters_report.txt")  # Ście�
 
 
 def analyze_results(results_path, embedding_param_ranges=None, svm_param_ranges=None):
-    try:
+    # try:
         # Jeśli zakresy parametrów nie zostały podane, spróbuj je wywnioskować z pliku wyników
         if embedding_param_ranges is None or svm_param_ranges is None:
             with open(results_path, 'r') as f:
@@ -32,8 +32,8 @@ def analyze_results(results_path, embedding_param_ranges=None, svm_param_ranges=
                     svm_param_ranges.setdefault(param, set()).add(value)
 
             # Konwersja zbiorów na listy (dla czytelniejszego wyświetlania)
-            embedding_param_ranges = {param: sorted(values) for param, values in embedding_param_ranges.items()}
-            svm_param_ranges = {param: sorted(values) for param, values in svm_param_ranges.items()}
+            embedding_param_ranges = {param: values for param, values in embedding_param_ranges.items()}
+            svm_param_ranges = {param: values for param, values in svm_param_ranges.items()}
 
         # Wyświetlenie zakresu badanych parametrów
         if embedding_param_ranges and svm_param_ranges:
@@ -58,6 +58,9 @@ def analyze_results(results_path, embedding_param_ranges=None, svm_param_ranges=
         best_word2vec_score = -1
         best_fasttext_score = -1
 
+        counter_w2v = 0
+        counter2_ft = 0
+        
         # Przeglądanie wyników
         for result in results:
             embedding_params = result['embedding_params']
@@ -67,6 +70,7 @@ def analyze_results(results_path, embedding_param_ranges=None, svm_param_ranges=
             svm_params = result['svm_params']
 
             if embedding_params['model_type'] == 'Word2Vec':
+                counter_w2v += 1
                 if f1_score > best_word2vec_score:
                     best_word2vec_score = f1_score
                     best_word2vec = {
@@ -76,6 +80,7 @@ def analyze_results(results_path, embedding_param_ranges=None, svm_param_ranges=
                     }
             
             elif embedding_params['model_type'] == 'FastText':
+                counter2_ft += 1
                 if f1_score > best_fasttext_score:
                     best_fasttext_score = f1_score
                     best_fasttext = {
@@ -84,6 +89,8 @@ def analyze_results(results_path, embedding_param_ranges=None, svm_param_ranges=
                         "classification_report": classification_report
                     }
         
+        print("Tested " + str(counter_w2v) + " combinations for word2vec" )
+        print("Tested " + str(counter2_ft) + " combinations for fasttext" )
         # Wyświetlenie najlepszych wyników
         print("\n" + "-"*50 )
         print("Best Word2Vec classifier:")
@@ -94,9 +101,10 @@ def analyze_results(results_path, embedding_param_ranges=None, svm_param_ranges=
         display_classification_report(best_fasttext['classification_report'], best_fasttext['svm_params'], best_fasttext['embedding_params'])
     
          # Zapisz najlepsze parametry oraz zakresy do pliku JSON
+        # Konwersja zakresów parametrów do formatu obsługiwanego przez JSON
         best_params = {
-            "embedding_param_ranges": embedding_param_ranges,
-            "svm_param_ranges": svm_param_ranges,
+            "embedding_param_ranges": {param: list(values) for param, values in embedding_param_ranges.items()},
+            "svm_param_ranges": {param: list(values) for param, values in svm_param_ranges.items()},
             "best_word2vec": best_word2vec,
             "best_fasttext": best_fasttext
         }
@@ -105,8 +113,9 @@ def analyze_results(results_path, embedding_param_ranges=None, svm_param_ranges=
             json.dump(best_params, output_file, indent=4)
         print(f"\nBest parameters and ranges saved to: {OUTPUT_PATH}")
 
-    except Exception as e:
-        print(f"An error occurred: {e}")
+    # except Exception as e:
+    #     print(f"An error occurred: {e}")
+
 
 def display_classification_report(report, svm_params, embedding_params):
     """

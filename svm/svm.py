@@ -11,7 +11,6 @@ import json
 from itertools import product
 from analyze_results import analyze_results  # Import funkcji analizy
 
-
 # Dodanie katalogu głównego do ścieżki Pythona
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(BASE_DIR)
@@ -22,28 +21,14 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("SVM_Classifier")
 
 # Ścieżki plików
-DATA_PATH = os.path.join(BASE_DIR, 'data', 'emotion.csv')
-OUTPUT_PATH = os.path.join(BASE_DIR, 'SVM', 'results.json')
+# DATA_PATH = os.path.join(BASE_DIR, 'data', 'emotion.csv')
+# OUTPUT_PATH = os.path.join(BASE_DIR, 'SVM', 'results.json')
+CONFIG_PATH = os.path.join(BASE_DIR, 'SVM', 'config.json')  # Ścieżka do pliku konfiguracyjnego
 
-# Parametry programu
-TEXT_COLUMN = "text"
-LABEL_COLUMN = "label"
-
-# Rozszerzone parametry embeddingów do przetestowania
-EMBEDDING_PARAMS_RANGES = {
-    'model_type': ['Word2Vec', 'FastText'],  # Typ modelu embeddingu
-    'vector_size': [50, 100, 200, 300],  # Rozmiar embeddingów
-    'window': [2, 3, 5, 7, 10],  # Rozmiar okna
-    'min_count': [1, 3, 5, 10]  # Minimalna liczba wystąpień słowa
-}
-
-# Siatka hiperparametrów SVM
-SVM_PARAMS_RANGES = {
-    'C': [0.1, 1, 10, 100],
-    'kernel': ['linear', 'rbf', 'poly', 'sigmoid'],
-    'gamma': ['scale', 'auto', 0.01, 0.1, 1],
-    'degree': [2, 3, 4]  # Tylko dla kernela poly
-}
+# Funkcja do wczytywania konfiguracji
+def load_config(config_path):
+    with open(config_path, 'r') as f:
+        return json.load(f)
 
 # Funkcja do tworzenia embeddingów
 def text_to_vector(text, model, embedding_dim):
@@ -53,9 +38,18 @@ def text_to_vector(text, model, embedding_dim):
     else:
         return np.zeros(embedding_dim)
 
-# Główna funkcja
+## Główna funkcja
 def main():
     try:
+        # Wczytywanie konfiguracji
+        config = load_config(CONFIG_PATH)
+        DATA_PATH = os.path.join(BASE_DIR, config["data_path"])
+        OUTPUT_PATH = os.path.join(BASE_DIR, config["output_path"])
+        TEXT_COLUMN = config["text_column"]
+        LABEL_COLUMN = config["label_column"]
+        EMBEDDING_PARAMS_RANGES = config["embedding_params_ranges"]
+        SVM_PARAMS_RANGES = config["svm_params_ranges"]
+
         # Preprocessing danych
         logger.info("Initializing preprocessing...")
         preprocessor = Preprocess(logger, path=DATA_PATH, text_column=TEXT_COLUMN, label_column=LABEL_COLUMN)
@@ -65,7 +59,7 @@ def main():
 
         # Zamiana etykiet na wartości liczbowe
         label_encoder = LabelEncoder()
-        y = label_encoder.fit_transform(data["label"])
+        y = label_encoder.fit_transform(data[LABEL_COLUMN])
 
         # Przechowywanie wyników
         results = []
@@ -78,7 +72,7 @@ def main():
             # Trening odpowiedniego modelu
             if embedding_params['model_type'] == 'Word2Vec':
                 model = Word2Vec(
-                    sentences=data["text"],
+                    sentences=data[TEXT_COLUMN],
                     vector_size=embedding_params['vector_size'],
                     window=embedding_params['window'],
                     min_count=embedding_params['min_count'],
@@ -86,7 +80,7 @@ def main():
                 )
             elif embedding_params['model_type'] == 'FastText':
                 model = FastText(
-                    sentences=data["text"],
+                    sentences=data[TEXT_COLUMN],
                     vector_size=embedding_params['vector_size'],
                     window=embedding_params['window'],
                     min_count=embedding_params['min_count'],
@@ -95,7 +89,7 @@ def main():
 
             # Przekształcanie tekstu na embeddingi
             logger.info("Transforming texts to embeddings...")
-            X = np.array([text_to_vector(text, model, embedding_params['vector_size']) for text in data["text"]])
+            X = np.array([text_to_vector(text, model, embedding_params['vector_size']) for text in data[TEXT_COLUMN]])
 
             # Podział danych na zbiór treningowy i testowy
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -104,25 +98,8 @@ def main():
             logger.info(f"Starting GridSearchCV for SVM with {embedding_params['model_type']} embeddings...")
             svm_model = SVC(random_state=42)
 
-            # Logowanie informacji o parametrach siatki hiperparametrów
-            logger.info(f"GridSearchCV SVM params: {SVM_PARAMS_RANGES}")
-
             grid_search = GridSearchCV(estimator=svm_model, param_grid=SVM_PARAMS_RANGES, cv=5, scoring='f1_weighted', n_jobs=-1)
-
-            # Logowanie liczby kombinacji hiperparametrów przed rozpoczęciem treningu
-            total_combinations = np.prod([len(v) for v in SVM_PARAMS_RANGES.values()])
-            logger.info(f"Total hyperparameter combinations to test: {total_combinations}")
-
             grid_search.fit(X_train, y_train)
-
-            # Logowanie najlepszego zestawu parametrów
-            logger.info(f"Best SVM params for current embedding ({embedding_params['model_type']}): {grid_search.best_params_}")
-
-            # # Przeszukiwanie siatki hiperparametrów dla SVM
-            # logger.info(f"Starting GridSearchCV for SVM with {embedding_params['model_type']} embeddings...")
-            # svm_model = SVC(random_state=42)
-            # grid_search = GridSearchCV(estimator=svm_model, param_grid=SVM_PARAMS_RANGES, cv=5, scoring='f1_weighted', n_jobs=-1)
-            # grid_search.fit(X_train, y_train)
 
             # Ocena najlepszego modelu
             best_model = grid_search.best_estimator_
@@ -138,18 +115,20 @@ def main():
 
             logger.info(f"Results for {embedding_params['model_type']} with params {embedding_params} saved.")
 
-        # Po zakończeniu eksperymentów: zapisz wyniki i wywołaj analizę
+        # Zapis wyników do pliku
         logger.info("Saving results to file...")
         with open(OUTPUT_PATH, 'w') as f:
             json.dump(results, f, indent=4)
         logger.info(f"All results saved to {OUTPUT_PATH}")
 
+        # Analiza wyników
         logger.info("Running analysis on results...")
         analyze_results(OUTPUT_PATH, EMBEDDING_PARAMS_RANGES, SVM_PARAMS_RANGES)
 
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         raise
+
 
 if __name__ == "__main__":
     main()

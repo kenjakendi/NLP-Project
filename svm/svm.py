@@ -101,16 +101,23 @@ def main():
             grid_search = GridSearchCV(estimator=svm_model, param_grid=SVM_PARAMS_RANGES, cv=5, scoring='f1_weighted', n_jobs=-1)
             grid_search.fit(X_train, y_train)
 
-            # Ocena najlepszego modelu
+           # Ocena najlepszego modelu
             best_model = grid_search.best_estimator_
-            y_pred = best_model.predict(X_test)
-            report = classification_report(y_test, y_pred, target_names=label_encoder.classes_, output_dict=True)
+
+            # Generowanie predykcji dla zbioru uczącego
+            y_train_pred = best_model.predict(X_train)
+            train_report = classification_report(y_train, y_train_pred, target_names=label_encoder.classes_, output_dict=True)
+
+            # Generowanie predykcji dla zbioru testowego
+            y_test_pred = best_model.predict(X_test)
+            test_report = classification_report(y_test, y_test_pred, target_names=label_encoder.classes_, output_dict=True)
 
             # Zapis wyników
             results.append({
                 "embedding_params": embedding_params,
                 "svm_params": grid_search.best_params_,
-                "classification_report": report
+                "train_classification_report": train_report,
+                "test_classification_report": test_report
             })
 
             logger.info(f"Results for {embedding_params['model_type']} with params {embedding_params} saved.")

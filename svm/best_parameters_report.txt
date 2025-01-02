@@ -1,34 +1,64 @@
 
-Embedding Parameters: 
-Model: Word2Vec, Vector size: 200, Window size: 10, Min count: 1
+Embedding Parameters:
+  Model: Word2Vec
+  Vector size: 100
+  Window size: 7
+  Min count: 3
 
 SVM Parameters:
-C: 100, Kernel: linear, Gamma: scale
-Classification Report:
-              precision    recall  f1-score     support
-angry          0.872093  0.882353  0.877193   85.000000
-happy          0.950000  0.913462  0.931373  104.000000
-relaxed        0.911765  0.930000  0.920792  100.000000
-sad            0.922330  0.931373  0.926829  102.000000
-accuracy       0.915601  0.915601  0.915601    0.915601
-macro avg      0.914047  0.914297  0.914047  391.000000
-weighted avg   0.916067  0.915601  0.915703  391.000000
+  C: 100
+  Kernel: linear
+  Gamma: scale
 
+Training Set Classification Report:
+              precision    recall  f1-score     support
+angry          0.922111  0.917500  0.919799   400.00000
+happy          0.956410  0.966321  0.961340   386.00000
+sad            0.908397  0.915385  0.911877   390.00000
+relaxed        0.958115  0.945736  0.951886   387.00000
+accuracy       0.936020  0.936020  0.936020     0.93602
+macro avg      0.936258  0.936236  0.936226  1563.00000
+weighted avg   0.936074  0.936020  0.936026  1563.00000
+
+Test Set Classification Report:
+              precision    recall  f1-score     support
+angry          0.855556  0.905882  0.880000   85.000000
+happy          0.959184  0.903846  0.930693  104.000000
+sad            0.912621  0.921569  0.917073  102.000000
+relaxed        0.930000  0.930000  0.930000  100.000000
+accuracy       0.915601  0.915601  0.915601    0.915601
+macro avg      0.914340  0.915324  0.914442  391.000000
+weighted avg   0.917045  0.915601  0.915943  391.000000
 ==================================================
 
-Embedding Parameters: 
-Model: FastText, Vector size: 200, Window size: 7, Min count: 5
+Embedding Parameters:
+  Model: FastText
+  Vector size: 100
+  Window size: 10
+  Min count: 5
 
 SVM Parameters:
-C: 100, Kernel: linear, Gamma: scale
-Classification Report:
-              precision    recall  f1-score     support
-angry          0.831461  0.870588  0.850575   85.000000
-happy          0.958333  0.884615  0.920000  104.000000
-relaxed        0.890000  0.890000  0.890000  100.000000
-sad            0.877358  0.911765  0.894231  102.000000
-accuracy       0.890026  0.890026  0.890026    0.890026
-macro avg      0.889288  0.889242  0.888701  391.000000
-weighted avg   0.892152  0.890026  0.890513  391.000000
+  C: 100
+  Kernel: linear
+  Gamma: scale
 
+Training Set Classification Report:
+              precision    recall  f1-score      support
+angry          0.878481  0.867500  0.872956   400.000000
+happy          0.940722  0.945596  0.943152   386.000000
+sad            0.862500  0.884615  0.873418   390.000000
+relaxed        0.926316  0.909561  0.917862   387.000000
+accuracy       0.901472  0.901472  0.901472     0.901472
+macro avg      0.902005  0.901818  0.901847  1563.000000
+weighted avg   0.901708  0.901472  0.901526  1563.000000
+
+Test Set Classification Report:
+              precision    recall  f1-score     support
+angry          0.862069  0.882353  0.872093   85.000000
+happy          0.936842  0.855769  0.894472  104.000000
+sad            0.897196  0.941176  0.918660  102.000000
+relaxed        0.872549  0.890000  0.881188  100.000000
+accuracy       0.892583  0.892583  0.892583    0.892583
+macro avg      0.892164  0.892325  0.891603  391.000000
+weighted avg   0.893801  0.892583  0.892520  391.000000
 ==================================================

@@ -1,5 +1,6 @@
 import os
 import sys
+import argparse
 import numpy as np
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.svm import SVC
@@ -22,9 +23,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("SVM_Classifier")
 
 # Ścieżki plików
-# DATA_PATH = os.path.join(BASE_DIR, 'data', 'emotion.csv')
-# OUTPUT_PATH = os.path.join(BASE_DIR, 'SVM', 'results.json')
-CONFIG_PATH = os.path.join(BASE_DIR, 'SVM', 'config.json')  # Ścieżka do pliku konfiguracyjnego
+# CONFIG_PATH = os.path.join(BASE_DIR, 'SVM', 'config.json')  # Ścieżka do pliku konfiguracyjnego
 
 # Funkcja do wczytywania konfiguracji
 def load_config(config_path):
@@ -40,10 +39,10 @@ def text_to_vector(text, embedding_model, embedding_dim):
         return np.zeros(embedding_dim)
 
 ## Główna funkcja
-def main():
+def main(config_path, save_models):
     try:
         # Wczytywanie konfiguracji
-        config = load_config(CONFIG_PATH)
+        config = load_config(config_path)
         DATA_PATH = os.path.join(BASE_DIR, config["data_path"])
         OUTPUT_PATH = os.path.join(BASE_DIR, config["output_path"])
         TEXT_COLUMN = config["text_column"]
@@ -62,9 +61,7 @@ def main():
         label_mapping = {'angry': 0, 'happy': 1, 'sad': 2, 'relaxed': 3}
         data[LABEL_COLUMN] = data[LABEL_COLUMN].map(label_mapping)
         y =data[LABEL_COLUMN].to_numpy()
-         # Zamiana etykiet na wartości liczbowe
-        # label_encoder = LabelEncoder()
-        # y = label_encoder.fit_transform(data["label"])
+
         # Przechowywanie wyników
         results = []
         
@@ -159,27 +156,28 @@ def main():
         logger.info(f"All results saved to {OUTPUT_PATH}")
 
 
-        # Zapis najlepszych modeli na koniec
-        # Tworzenie folderu 'svm/best_models', jeśli nie istnieje
-        best_models_dir = os.path.join(BASE_DIR, 'SVM', 'best_models')
-        os.makedirs(best_models_dir, exist_ok=True)
+        if save_models:
+            # Zapis najlepszych modeli na koniec
+            # Tworzenie folderu 'svm/best_models', jeśli nie istnieje
+            best_models_dir = os.path.join(BASE_DIR, 'SVM', 'best_models')
+            os.makedirs(best_models_dir, exist_ok=True)
 
-        if best_fasttext_result["svm_model"]:
-            logger.info("Saving best FastText SVM model and embedding model...")
-            joblib.dump(best_fasttext_result["svm_model"], os.path.join(best_models_dir, 'best_fasttext_svm.joblib'))
-            best_fasttext_result["embedding_model"].save(os.path.join(best_models_dir, 'best_fasttext_embedding.model'))
+            if best_fasttext_result["svm_model"]:
+                logger.info("Saving best FastText SVM model and embedding model...")
+                joblib.dump(best_fasttext_result["svm_model"], os.path.join(best_models_dir, 'best_fasttext_svm.joblib'))
+                best_fasttext_result["embedding_model"].save(os.path.join(best_models_dir, 'best_fasttext_embedding.model'))
 
-        if best_word2vec_result["svm_model"]:
-            logger.info("Saving best Word2Vec SVM model and embedding model...")
-            joblib.dump(best_word2vec_result["svm_model"], os.path.join(best_models_dir, 'best_word2vec_svm.joblib'))
-            best_word2vec_result["embedding_model"].save(os.path.join(best_models_dir, 'best_word2vec_embedding.model'))
+            if best_word2vec_result["svm_model"]:
+                logger.info("Saving best Word2Vec SVM model and embedding model...")
+                joblib.dump(best_word2vec_result["svm_model"], os.path.join(best_models_dir, 'best_word2vec_svm.joblib'))
+                best_word2vec_result["embedding_model"].save(os.path.join(best_models_dir, 'best_word2vec_embedding.model'))
 
-        logger.info("Best models saved successfully.")
+            logger.info("Best models saved successfully.")
 
 
         # Analiza wyników
         logger.info("Running analysis on results...")
-        analyze_results(OUTPUT_PATH, EMBEDDING_PARAMS_RANGES, SVM_PARAMS_RANGES)
+        analyze_results(OUTPUT_PATH, EMBEDDING_PARAMS_RANGES, SVM_PARAMS_RANGES, save_results = False)
 
     except Exception as e:
         logger.error(f"An error occurred: {e}")
@@ -187,4 +185,21 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Train SVM classifier with embeddings.")
+    parser.add_argument(
+        "config_path",
+        nargs="?",
+        default=os.path.join(BASE_DIR, "SVM", "config.json"),  # Domyślna ścieżka
+        help="Path to the configuration file (default: SVM/config.json)."
+    )
+    parser.add_argument(
+        "--save-models",
+        action="store_true",
+        help="Flag to save models to disk."
+    )
+    args = parser.parse_args()
+    main(args.config_path, args.save_models)
+
+    # Zatrzymanie programu na końcu
+    input("Finished. Press Enter, to exit...")
+

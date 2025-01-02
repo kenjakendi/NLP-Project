@@ -17,22 +17,33 @@ sys.path.append(BASE_DIR)
 from preprocess import Preprocess
 
 
+class RNN(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size, num_layers):
+        super(RNN, self).__init__()
+        self.rnn = nn.RNN(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers, batch_first=True)
+        self.fc = nn.Linear(hidden_size, output_size)
+        self.relu = nn.ReLU()
 
-class FFNN(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size):
-        super(FFNN, self).__init__()
-        self.fc1 = nn.Linear(input_size, hidden_size)
-        self.relu1 = nn.ReLU()
-        self.fc2 = nn.Linear(hidden_size, hidden_size)
-        self.relu2 = nn.ReLU()
-        self.fc3 = nn.Linear(hidden_size, output_size)
+    def forward(self, x):
+        h0 = torch.zeros(self.rnn.num_layers, x.size(0), hidden_size).to(x.device)
+        out, _ = self.rnn(x, h0)
+        out = out[:, -1, :]
+        out = self.fc(out)
+        out = torch.softmax(out, dim=1)
+        return out
+    
+class LSTM(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size, num_layers, dropout):
+        super(LSTM, self).__init__()
+        self.lstm = nn.LSTM(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers, batch_first=True, dropout=dropout)
+        self.fc = nn.Linear(hidden_size, output_size)
     
     def forward(self, x):
-        out = self.fc1(x)
-        out = self.relu1(out)
-        out = self.fc2(out)
-        out = self.relu2(out)
-        out = self.fc3(out)
+        h0 = torch.zeros(self.lstm.num_layers, x.size(0), hidden_size).to(x.device)
+        c0 = torch.zeros(self.lstm.num_layers, x.size(0), hidden_size).to(x.device)
+        out, _ = self.lstm(x, (h0, c0))
+        out = out[:, -1, :]
+        out = self.fc(out)
         out = torch.softmax(out, dim=1)
         return out
 
@@ -65,8 +76,8 @@ if __name__ == "__main__":
     pp = Preprocess(logger=logger ,path=params["data_path"], text_column=params["text_column"], label_column=params["label_column"])
     pp.run()
 
-    logger.info("Loading FFNN settings")
-    with open('FFNN/ffnn_params.json', 'r') as file:
+    logger.info("Loading RNN settings")
+    with open('RNN/rnn_params.json', 'r') as file:
         params = json.load(file)
 
     run_mode = params["run_mode"]
@@ -79,6 +90,9 @@ if __name__ == "__main__":
     vector_size = params["vector_size"]
     window = params["window"]
     min_count = params["min_count"]
+    num_layers = params["num_layers"]
+    unsqueeze = params["unsqueeze"]
+    dropout = params["dropout"]
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info(f"Using device: {device}")
@@ -104,25 +118,35 @@ if __name__ == "__main__":
     lyrics_test = torch.tensor(lyrics_test, dtype=torch.float32).to(device)
     emotion_train = torch.tensor(emotion_train, dtype=torch.long).to(device)
     emotion_test = torch.tensor(emotion_test, dtype=torch.long).to(device)
-    
+
+    lyrics_train = lyrics_train.unsqueeze(unsqueeze)
+    lyrics_test = lyrics_test.unsqueeze(unsqueeze)
+
     logger.info(f"Chosen run mode: {run_mode}")
 
-    input_size = lyrics_train.shape[1]
+    input_size = lyrics_train.shape[2]
     output_size = len(label_encoder.classes_)
 
-    logger.info("Creating FFNN model.")
-    model = FFNN(
+    logger.info("Creating RNN model.")
+
+    # model = RNN(
+    #     input_size=input_size,
+    #     hidden_size=hidden_size,
+    #     output_size=output_size,
+    #     num_layers=num_layers,
+    # ).to(device=device)
+
+    model = LSTM(
         input_size=input_size,
         hidden_size=hidden_size,
         output_size=output_size,
-    ).to(
-        device=device
-    )
-
+        num_layers=num_layers,
+        dropout=dropout,
+    ).to(device=device)
+    
     if "train" in run_mode:
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-
 
         logger.info("Training has been STARTED...")
         for epoch in range(epochs):
@@ -134,21 +158,21 @@ if __name__ == "__main__":
             optimizer.step()
 
             if (epoch+1) % 100 == 0:
-
                 logger.info(f"Epoch [{epoch + 1}/{epochs}], Loss: {loss.item():.4f}")
 
         logger.info("Training has been FINISHED.")
 
         logger.info("Saving trained model")
-        torch.save(model.state_dict(), model_file_path)
-        logger.info(f"Model saved to {model_file_path}")
+        model_file_name = f'{model_file_path}rnn_model_{embedding_type}_{epochs}_{hidden_size}_{num_layers}.pth'
+        torch.save(model.state_dict(), model_file_name)
+        logger.info(f"Model saved to {model_file_name}")
 
 
     if "test" in run_mode:
         logger.info("Evaluating the model on test data")
-
-        model.load_state_dict(torch.load(model_file_path, weights_only=True))
-        logger.info(f"Model loaded from {model_file_path}")
+        model_file_name = f'{model_file_path}rnn_model_{embedding_type}_{epochs}_{hidden_size}_{num_layers}.pth'
+        model.load_state_dict(torch.load(model_file_name, weights_only=True))
+        logger.info(f"Model loaded from {model_file_name}")
 
         model.eval()
         with torch.no_grad():
@@ -161,4 +185,3 @@ if __name__ == "__main__":
 
         print("Classification report")
         print(classification_report(emotion_test.cpu(), predicted.cpu(), target_names=label_encoder.classes_))
-

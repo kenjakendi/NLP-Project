@@ -1,0 +1,15 @@
+{
+    "run_mode": "train and test",
+    "test_size": 0.2,
+    "embedding_type": "word2vec",
+    "vector_size": 300,
+    "window": 10,
+    "min_count": 3,
+    "hidden_size": 50,
+    "num_layers": 1,
+    "dropout": 0.3,
+    "unsqueeze": 1,
+    "epochs": 500,
+    "model_file_path": "RNN/",
+    "learning_rate": 0.0003
+}

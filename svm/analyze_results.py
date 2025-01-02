@@ -8,7 +8,7 @@ OUTPUT_PATH = os.path.join(BASE_DIR, "best_parameters.json")
 TXT_OUTPUT_PATH = os.path.join(BASE_DIR, "best_parameters_report.txt")  # Ścieżka do pliku tekstowego
 
 
-def analyze_results(results_path, embedding_param_ranges=None, svm_param_ranges=None, save_results=False):
+def analyze_results(results_path, embedding_param_ranges=None, svm_param_ranges=None):
     if embedding_param_ranges is None or svm_param_ranges is None:
         with open(results_path, 'r') as f:
             results = json.load(f)
@@ -77,11 +77,11 @@ def analyze_results(results_path, embedding_param_ranges=None, svm_param_ranges=
 
     print("\n" + "-" * 50)
     print("Best Word2Vec classifier:")
-    display_classification_reports(best_word2vec, save_results)
+    display_classification_reports(best_word2vec)
 
     print("\n" + "-" * 50)
     print("Best FastText classifier:")
-    display_classification_reports(best_fasttext, save_results)
+    display_classification_reports(best_fasttext)
 
     best_params = {
         "embedding_param_ranges": {param: list(values) for param, values in embedding_param_ranges.items()},
@@ -90,13 +90,12 @@ def analyze_results(results_path, embedding_param_ranges=None, svm_param_ranges=
         "best_fasttext": best_fasttext
     }
 
-    if save_results:
-        with open(OUTPUT_PATH, 'w') as output_file:
-            json.dump(best_params, output_file, indent=4)
-        print(f"\nBest parameters and ranges saved to: {OUTPUT_PATH}")
+    with open(OUTPUT_PATH, 'w') as output_file:
+        json.dump(best_params, output_file, indent=4)
+    print(f"\nBest parameters and ranges saved to: {OUTPUT_PATH}")
 
 
-def display_classification_reports(result, save_results):
+def display_classification_reports(result):
     """
     Wyświetla raporty klasyfikacji dla zbiorów uczącego i testowego
     """
@@ -126,25 +125,25 @@ def display_classification_reports(result, save_results):
     print("\nTest Set Classification Report:")
     print(test_report.to_string(index=True))
 
-    if save_results:
-        with open(TXT_OUTPUT_PATH, 'a') as txt_file:
-            txt_file.write("\nEmbedding Parameters:\n")
-            txt_file.write(f"  Model: {embedding_params.get('model_type', 'N/A')}\n")
-            txt_file.write(f"  Vector size: {embedding_params.get('vector_size', 'N/A')}\n")
-            txt_file.write(f"  Window size: {embedding_params.get('window', 'N/A')}\n")
-            txt_file.write(f"  Min count: {embedding_params.get('min_count', 'N/A')}\n")
+    
+    with open(TXT_OUTPUT_PATH, 'a') as txt_file:
+        txt_file.write("\nEmbedding Parameters:\n")
+        txt_file.write(f"  Model: {embedding_params.get('model_type', 'N/A')}\n")
+        txt_file.write(f"  Vector size: {embedding_params.get('vector_size', 'N/A')}\n")
+        txt_file.write(f"  Window size: {embedding_params.get('window', 'N/A')}\n")
+        txt_file.write(f"  Min count: {embedding_params.get('min_count', 'N/A')}\n")
 
-            txt_file.write("\nSVM Parameters:\n")
-            txt_file.write(f"  C: {svm_params['C']}\n")
-            txt_file.write(f"  Kernel: {svm_params['kernel']}\n")
-            txt_file.write(f"  Gamma: {svm_params['gamma']}\n")
+        txt_file.write("\nSVM Parameters:\n")
+        txt_file.write(f"  C: {svm_params['C']}\n")
+        txt_file.write(f"  Kernel: {svm_params['kernel']}\n")
+        txt_file.write(f"  Gamma: {svm_params['gamma']}\n")
 
-            txt_file.write("\nTraining Set Classification Report:\n")
-            txt_file.write(train_report.to_string(index=True) + "\n")
+        txt_file.write("\nTraining Set Classification Report:\n")
+        txt_file.write(train_report.to_string(index=True) + "\n")
 
-            txt_file.write("\nTest Set Classification Report:\n")
-            txt_file.write(test_report.to_string(index=True) + "\n")
-            txt_file.write("=" * 50 + "\n")
+        txt_file.write("\nTest Set Classification Report:\n")
+        txt_file.write(test_report.to_string(index=True) + "\n")
+        txt_file.write("=" * 50 + "\n")
 
     
 

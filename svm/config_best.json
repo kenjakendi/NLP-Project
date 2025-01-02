@@ -1,18 +1,19 @@
 {
-    "data_path": "data/emotion.csv",
-    "output_path": "SVM/results.json",
-    "text_column": "text",
-    "label_column": "label",
-    "embedding_params_ranges": {
-      "model_type": ["Word2Vec", "FastText"],
-      "vector_size": [100],
-      "window": [5, 7],
-      "min_count": [3, 5]
-    },
-    "svm_params_ranges": {
-      "C": [100],
-      "kernel": ["linear"],
-      "gamma": ["scale"],
-      "degree": [2]
-    }
+  "data_path": "data/emotion.csv",
+  "text_column": "text",
+  "label_column": "label",
+  "Word2Vec": {
+      "vector_size": 100,
+      "window": 7,
+      "min_count": 3
+  },
+  "FastText": {
+      "vector_size": 100,
+      "window": 10,
+      "min_count": 5
+  },
+  "SVM": {
+      "C": 100,
+      "kernel": "linear"
+  }
 }

@@ -18,9 +18,9 @@ from preprocess import Preprocess
 
 
 class RNN(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, num_layers):
+    def __init__(self, input_size, hidden_size, output_size, num_layers, dropout):
         super(RNN, self).__init__()
-        self.rnn = nn.RNN(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers, batch_first=True)
+        self.rnn = nn.RNN(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers, batch_first=True, dropout=dropout)
         self.fc = nn.Linear(hidden_size, output_size)
         self.relu = nn.ReLU()
 
@@ -61,7 +61,7 @@ def create_embedding_matrix(tokenized_texts, model):
 
 
 if __name__ == "__main__":
-    level = logging.DEBUG
+    level = logging.INFO
     logger = logging.getLogger()
     console_handler = logging.StreamHandler()
     logger.setLevel(level)
@@ -102,10 +102,18 @@ if __name__ == "__main__":
 
     logger.info(f"Converting tokenized lyrics to embeddings with {embedding_type}")
     if embedding_type == "word2vec":
-        embedding_model = Word2Vec(sentences=tokenized_lyrics, vector_size=vector_size, window=window, min_count=min_count, workers=4)
+        try:
+            embedding_model = Word2Vec.load(f"{model_file_path}{embedding_type}.model")
+        except FileNotFoundError:
+            embedding_model = Word2Vec(sentences=tokenized_lyrics, vector_size=vector_size, window=window, min_count=min_count, workers=4)
+            embedding_model.save(f"{model_file_path}{embedding_type}.model")
     else:
-        embedding_model = FastText(sentences=tokenized_lyrics, vector_size=vector_size, window=window, min_count=min_count, workers=4)
-
+        try:
+            embedding_model = FastText.load(f"{model_file_path}{embedding_type}.model")
+        except FileNotFoundError:
+            embedding_model = FastText(sentences=tokenized_lyrics, vector_size=vector_size, window=window, min_count=min_count, workers=4)
+            embedding_model.save(f"{model_file_path}{embedding_type}.model")
+    
     lyrics_embeddings = create_embedding_matrix(tokenized_lyrics, embedding_model)
 
     label_encoder = LabelEncoder()
@@ -129,20 +137,21 @@ if __name__ == "__main__":
 
     logger.info("Creating RNN model.")
 
-    # model = RNN(
-    #     input_size=input_size,
-    #     hidden_size=hidden_size,
-    #     output_size=output_size,
-    #     num_layers=num_layers,
-    # ).to(device=device)
-
-    model = LSTM(
+    model = RNN(
         input_size=input_size,
         hidden_size=hidden_size,
         output_size=output_size,
         num_layers=num_layers,
         dropout=dropout,
     ).to(device=device)
+
+    # model = LSTM(
+    #     input_size=input_size,
+    #     hidden_size=hidden_size,
+    #     output_size=output_size,
+    #     num_layers=num_layers,
+    #     dropout=dropout,
+    # ).to(device=device)
     
     if "train" in run_mode:
         criterion = nn.CrossEntropyLoss()

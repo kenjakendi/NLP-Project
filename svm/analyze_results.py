@@ -5,7 +5,7 @@ import pandas as pd
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DEFAULT_RESULTS_PATH = os.path.join(BASE_DIR, "results.json")
 OUTPUT_PATH = os.path.join(BASE_DIR, "best_parameters.json")
-TXT_OUTPUT_PATH = os.path.join(BASE_DIR, "best_parameters_report.txt")  # Ścieżka do pliku tekstowego
+TXT_OUTPUT_PATH = os.path.join(BASE_DIR, "best_parameters.txt")  # Ścieżka do pliku tekstowego
 
 
 def analyze_results(results_path, embedding_param_ranges=None, svm_param_ranges=None):
@@ -125,6 +125,7 @@ def display_classification_reports(result):
     print("\nTest Set Classification Report:")
     print(test_report.to_string(index=True))
 
+    
     with open(TXT_OUTPUT_PATH, 'a') as txt_file:
         txt_file.write("\nEmbedding Parameters:\n")
         txt_file.write(f"  Model: {embedding_params.get('model_type', 'N/A')}\n")

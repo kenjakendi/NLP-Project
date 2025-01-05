@@ -1,9 +1,0 @@
-{
-    "run_mode": "train and test",
-    "test_size": 0.2,
-    "embedding_type": "word2vec",
-    "hidden_size": 12,
-    "epochs": 100,
-    "model_file_path": "fnn_model.pth",
-    "learning_rate":0.001
-}

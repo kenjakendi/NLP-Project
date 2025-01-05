@@ -1,10 +1,11 @@
 name: bert-base-uncased
+epochs: 5
 max_len: 512
 batch_size: 8
-epochs: 5
-dropout_rate: 0.1
-learning_rate: 2e-5
-split_size: 0.2
-split_seed: 3
+dropout_rate: 0.3
+learning_rate: 2e-05
 label_column: label
 text_column: text
+split_size: 0.2
+split_seed: 42
+model_path: "bert/models/my_bert"
